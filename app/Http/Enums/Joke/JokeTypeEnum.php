@@ -1,22 +1,12 @@
 <?php
 
-namespace App\Http\Enums;
+namespace App\Http\Enums\Joke;
 
-enum JokeCategoryEnum: string
+enum JokeTypeEnum: string
 {
-     case ANY = 'Any';
+    case SINGLE = 'Single';
 
-    case DARK = 'Dark';
-
-    case MISC = 'Misc';
-
-    case PROGRAMMING = 'Programming';
-
-    CASE PUN = 'Pun';
-
-    CASE SPOOKY = 'Spooky';
-
-    case CHRISTMAS = 'Christmas';
+    case TWO_PART = 'Two part';
 
     /**
      * Returns an array of the values of all enum cases.

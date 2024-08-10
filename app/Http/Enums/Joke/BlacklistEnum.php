@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Enums;
+namespace App\Http\Enums\Joke;
 
 enum BlacklistEnum: string
 {
