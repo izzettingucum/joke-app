@@ -51,7 +51,7 @@ final class JokeController extends Controller
 
         $blacklist = $request->blacklist ? implode(separator: ',', array: $request->blacklist) : null;
 
-        $jokeType = strtolower(string: $request->type) ?? null;
+        $jokeType = strtolower(preg_replace(pattern: '/\s+/', replacement: '', subject: $request->type));
 
         $baseUrl = "https://v2.jokeapi.dev/joke/{$jokeCategory}";
 
