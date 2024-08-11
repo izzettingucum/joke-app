@@ -13,7 +13,9 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            margin: 0;
         }
+
         .joke-container {
             background: #fff;
             padding: 2rem;
@@ -23,11 +25,39 @@
             width: 100%;
             text-align: center;
         }
+
+        .form-label {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-check-input {
+            margin-right: 0.5rem;
+        }
+
+        .form-check-label {
+            font-size: 1rem;
+        }
+
         #get-joke {
             margin-top: 1rem;
+            font-size: 1.2rem;
+            padding: 0.75rem 1.5rem;
         }
+
         #joke-display {
             margin-top: 2rem;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            padding: 1rem;
+            border-radius: 5px;
+            text-align: left;
+        }
+
+        #joke-display h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
         }
     </style>
 </head>
@@ -35,19 +65,27 @@
 <div class="joke-container">
     <h1 class="mb-4">Random Joke Generator</h1>
 
-    <label for="joke-category" class="form-label">Choose a joke category:</label>
-    <select id="joke-category" class="form-select">
-        @foreach($jokeCategories as $category)
-            <option value="{{ $category }}">{{ $category }}</option>
-        @endforeach
-    </select>
-
     <div class="form-group">
+        <label for="joke-categories" class="form-label">Choose joke categories:</label>
+        <div class="d-flex flex-wrap">
+            @foreach($jokeCategories as $category)
+                <div class="form-check me-3">
+                    <input class="form-check-input" type="checkbox" name="joke-categories[]" id="joke-category-{{ $category }}" value="{{ $category }}">
+                    <label class="form-check-label" for="joke-category-{{ $category }}">
+                        {{ $category }}
+                    </label>
+                </div>
+            @endforeach
+        </div>
+    </div>
+
+    <div class="form-group mt-3">
         <label for="joke-blacklist" class="form-label">Choose blacklist categories:</label>
         <div class="d-flex flex-wrap">
             @foreach($blackLists as $value)
                 <div class="form-check me-3">
-                    <input class="form-check-input" type="checkbox" name="blacklist-categories[]" id="blacklist-{{ $value }}" value="{{ $value }}">
+                    <input class="form-check-input" type="checkbox" name="blacklist-categories[]"
+                           id="blacklist-{{ $value }}" value="{{ $value }}">
                     <label class="form-check-label" for="blacklist-{{ $value }}">
                         {{ $value }}
                     </label>
@@ -56,12 +94,13 @@
         </div>
     </div>
 
-    <div class="form-group">
+    <div class="form-group mt-3">
         <label for="joke-type" class="form-label">Choose a joke type:</label>
         <div class="d-flex flex-wrap">
             @foreach($jokeTypes as $type)
                 <div class="form-check me-3">
-                    <input class="form-check-input" type="radio" name="joke-type" id="joke-type-{{ $type }}" value="{{ $type }}">
+                    <input class="form-check-input" type="radio" name="joke-type" id="joke-type-{{ $type }}"
+                           value="{{ $type }}">
                     <label class="form-check-label" for="joke-type-{{ $type }}">
                         {{ $type }}
                     </label>
@@ -79,31 +118,56 @@
 </div>
 
 <script>
-    $(document).ready(function() {
-        $('#get-joke').click(function() {
-            const category = $('#joke-category').val();
-
-            const type = $('input[name="joke-type"]:checked').val();
-
-            const blacklistCategories = $('input[name="blacklist-categories[]"]:checked').map(function() {
+    $(document).ready(function () {
+        $('#get-joke').click(function () {
+            const jokeCategories = $('input[name="joke-categories[]"]:checked').map(function () {
                 return $(this).val();
             }).get();
 
+            const blacklistCategories = $('input[name="blacklist-categories[]"]:checked').map(function () {
+                return $(this).val();
+            }).get();
+
+            const type = $('input[name="joke-type"]:checked').val();
+
             $.ajax({
-                url: '/get-joke',
+                url: '/joke',
                 method: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',
-                    category: category,
-                    type: type,
-                    blacklist: blacklistCategories
+                    category: jokeCategories.length > 0 ? jokeCategories : ['any'],
+                    blacklist: blacklistCategories.length > 0 ? blacklistCategories : null,
+                    type: type ?? null,
                 },
-                success: function(response) {
-                    // Gelen yanıtı işleyin
-                    if (response.type === 'single') {
-                        $('#joke-text').text(response.joke);
+                success: function (response) {
+                    if (response.type === 'twopart') {
+                        const setup = response.setup;
+                        const delivery = response.delivery;
+
+                        $('#joke-text').html(`
+                            <strong>Question:</strong> ${setup}<br>
+                            <strong>Answer:</strong> ${delivery}
+                        `);
+                    }
+
+                    else {
+                        const joke = response.joke;
+
+                        $('#joke-text').html(`
+                            <strong>Joke:</strong> ${joke}
+                        `);
+                    }
+                },
+                error: function (xhr) {
+                    if (xhr.status === 422) {
+                        const errors = xhr.responseJSON.errors;
+                        let errorMessage = '';
+                        $.each(errors, function (key, messages) {
+                            errorMessage += `${messages.join(', ')}\n`;
+                        });
+                        alert(errorMessage);
                     } else {
-                        $('#joke-text').html('<strong>' + response.setup + '</strong><br>' + response.delivery);
+                        alert('Bir hata oluştu. Lütfen tekrar deneyin.');
                     }
                 }
             });

@@ -8,3 +8,4 @@ Route::get('/', function () {
 });
 
 route::get('/joke', [JokeController::class, 'displayIndexPage']);
+route::post('/joke', [JokeController::class, 'getJoke']);
